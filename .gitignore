@@ -1,0 +1,14 @@
+# Local secrets / credentials (keep Snowflake keys out of the repo)
+.env
+.env.*
+*.pem
+*.p8
+*.p8b
+*.key
+*.p12
+*.pfx
+.snowflake/
+.snowflake_cli/
+
+# OS/editor noise
+.DS_Store
