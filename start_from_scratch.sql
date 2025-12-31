@@ -1,7 +1,11 @@
--- Reset script: preserve staged JSONL files, but drop/recreate procs, task, view; truncate tables.
+-- Reset script: preserve staged JSONL files, but drop/recreate procs, task, view; drop tables.
 USE DATABASE EVO_DEMO;
 USE SCHEMA IOWA_LIQUOR_SALES;
 USE WAREHOUSE IOWA_WH;
+
+-- Remove git repo + secret so tutorial restarts cleanly (recreate via 01_env/git_repo_setup.sql)
+DROP GIT REPOSITORY IF EXISTS IOWA_LIQUOR_SALES_REPO;
+DROP SECRET IF EXISTS GITHUB_PAT_EVOGELPOHL;
 
 -- Disable and drop task
 ALTER TASK IF EXISTS WEEKLY_IOWA_LOAD SUSPEND;
@@ -16,9 +20,9 @@ DROP PROCEDURE IF EXISTS SP_LOAD_IOWA(ARRAY);
 -- Drop view
 DROP VIEW IF EXISTS dim_store_location_v;
 
--- Truncate tables (keep stage files intact)
-TRUNCATE TABLE IF EXISTS RAW_IOWA;
-TRUNCATE TABLE IF EXISTS IOWA_LIQUOR_SALES;
+-- Drop tables (keep stage files intact)
+DROP TABLE IF EXISTS RAW_IOWA;
+DROP TABLE IF EXISTS IOWA_LIQUOR_SALES;
 
 -- Recreate procs, task, view by rerunning:
 -- 01_env/*.sql (env)
