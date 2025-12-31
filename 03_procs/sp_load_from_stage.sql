@@ -1,7 +1,7 @@
 USE DATABASE EVO_DEMO;
 USE SCHEMA IOWA_LIQUOR_SALES;
 
-CREATE OR REPLACE PROCEDURE SP_LOAD_IOWA_FROM_STAGE(years ARRAY)
+CREATE OR REPLACE PROCEDURE SP_LOAD_IOWA_FROM_STAGE(years ARRAY, months ARRAY)
   RETURNS STRING
   LANGUAGE PYTHON
   RUNTIME_VERSION = '3.10'
@@ -26,7 +26,32 @@ def last_complete_month_start(today):
     first_of_month = today.replace(day=1)
     return (first_of_month - timedelta(days=1)).replace(day=1)
 
-def build_stage_pattern(years):
+def parse_months(months_in, last_full):
+    months_out = []
+    if not months_in:
+        return months_out
+    for m in months_in:
+        try:
+            parts = str(m).split("-")
+            if len(parts) != 2:
+                continue
+            y = int(parts[0])
+            mo = int(parts[1])
+            if mo < 1 or mo > 12 or y < DATASET_START_YEAR:
+                continue
+            start = date(y, mo, 1)
+            if start > last_full:
+                continue
+            months_out.append((y, mo))
+        except Exception:
+            continue
+    return sorted(set(months_out))
+
+def build_stage_pattern(years, months):
+    month_pairs = parse_months(months, last_complete_month_start(date.today()))
+    if month_pairs:
+        parts = [f".*year={y:04d}/month={m:02d}/.*\\.jsonl" for (y, m) in month_pairs]
+        return "|".join(parts)
     if not years:
         return ".*\\.jsonl"
     parts = [f".*year={y}/.*\\.jsonl" for y in sorted(set(years))]
@@ -182,7 +207,8 @@ def merge_target(session, df):
         )
     """).collect()
 
-def run(session: Session, years=None) -> str:
+def run(session: Session, years=None, months=None) -> str:
+    # Normalize inputs
     year_list = []
     if years:
         try:
@@ -190,11 +216,15 @@ def run(session: Session, years=None) -> str:
         except Exception:
             year_list = []
 
+    month_list = []
+    if months:
+        month_list = parse_months(months, last_complete_month_start(date.today()))
+
     last_full = last_complete_month_start(date.today())
     if year_list:
         year_list = [y for y in year_list if DATASET_START_YEAR <= y <= last_full.year]
 
-    pattern = build_stage_pattern(year_list)
+    pattern = build_stage_pattern(year_list, month_list)
 
     copy_sql = f"""
         COPY INTO {RAW_TABLE} (RAW, FILE_NAME)

@@ -1,7 +1,7 @@
 USE DATABASE EVO_DEMO;
 USE SCHEMA IOWA_LIQUOR_SALES;
 
-CREATE OR REPLACE PROCEDURE SP_FETCH_IOWA_TO_STAGE(years ARRAY)
+CREATE OR REPLACE PROCEDURE SP_FETCH_IOWA_TO_STAGE(years ARRAY, months ARRAY)
   RETURNS STRING
   LANGUAGE PYTHON
   RUNTIME_VERSION = '3.10'
@@ -32,6 +32,27 @@ def first_day_next_month(d): return date(d.year + (d.month == 12), (d.month % 12
 def last_complete_month_start(today):
     first_of_month = today.replace(day=1)
     return (first_of_month - timedelta(days=1)).replace(day=1)
+
+def parse_months(months_in, last_full):
+    months_out = []
+    if not months_in:
+        return months_out
+    for m in months_in:
+        try:
+            parts = str(m).split("-")
+            if len(parts) != 2:
+                continue
+            y = int(parts[0])
+            mo = int(parts[1])
+            if mo < 1 or mo > 12 or y < DATASET_START_YEAR:
+                continue
+            start = date(y, mo, 1)
+            if start > last_full:
+                continue
+            months_out.append((y, mo))
+        except Exception:
+            continue
+    return sorted(set(months_out))
 
 def fetch_pages(start, end, max_retries=5, backoff=2.0):
     start_str = start.strftime("%Y-%m-%dT00:00:00.000")
@@ -74,7 +95,7 @@ def write_page_to_stage(session, records, year_val, month_val, page_idx):
     print(f"Wrote file {stage_path} rows={len(records)}")
     return len(records)
 
-def run(session: Session, years=None) -> str:
+def run(session: Session, years=None, months=None) -> str:
     year_list = []
     if years:
         try:
@@ -86,25 +107,32 @@ def run(session: Session, years=None) -> str:
     total_rows = 0
     total_files = 0
 
-    if year_list:
-        years_to_run = [y for y in sorted(set(year_list)) if DATASET_START_YEAR <= y <= last_full.year]
-    else:
-        years_to_run = [last_full.year]
+    month_pairs = parse_months(months, last_full)
 
-    for y in years_to_run:
-        end_month = last_full.month if y == last_full.year else 12
-        for m in range(1, end_month + 1):
-            month_start = date(y, m, 1)
-            if month_start > last_full:
-                continue
-            next_month = first_day_next_month(month_start)
-            month_end = next_month - timedelta(days=1)
-            page_idx = 0
-            for page in fetch_pages(month_start, month_end):
-                page_idx += 1
-                rows_written = write_page_to_stage(session, page, y, m, page_idx)
-                total_rows += rows_written
-                total_files += 1
-            print(f"Finished month {y}-{m:02d} pages={page_idx}")
+    if month_pairs:
+        months_to_run = month_pairs
+    else:
+        if year_list:
+            years_to_run = [y for y in sorted(set(year_list)) if DATASET_START_YEAR <= y <= last_full.year]
+        else:
+            years_to_run = [last_full.year]
+        months_to_run = []
+        for y in years_to_run:
+            end_month = last_full.month if y == last_full.year else 12
+            for m in range(1, end_month + 1):
+                months_to_run.append((y, m))
+
+    for y, m in months_to_run:
+        month_start = date(y, m, 1)
+        next_month = first_day_next_month(month_start)
+        month_end = next_month - timedelta(days=1)
+        page_idx = 0
+        for page in fetch_pages(month_start, month_end):
+            page_idx += 1
+            rows_written = write_page_to_stage(session, page, y, m, page_idx)
+            total_rows += rows_written
+            total_files += 1
+        print(f"Finished month {y}-{m:02d} pages={page_idx}")
+
     return f"Wrote {total_rows} rows across {total_files} files to stage {STAGE_BASE} through {last_full}"
 $$;
