@@ -1,0 +1,27 @@
+import streamlit as st
+from snowflake.snowpark.context import get_active_session
+
+st.set_page_config(page_title="Iowa Liquor Sales", layout="wide")
+
+session = get_active_session()
+
+st.title("Iowa Liquor Sales — 2025 by Liquor Category")
+st.caption("Data from EVO_DEMO.IOWA_LIQUOR_SALES.IOWA_LIQUOR_SALES (SALE_YEAR = 2025)")
+
+query = """
+SELECT
+  LIQUOR_CATEGORY,
+  SUM(SALE_DOLLARS) AS SALE_DOLLARS
+FROM EVO_DEMO.IOWA_LIQUOR_SALES.IOWA_LIQUOR_SALES
+WHERE SALE_YEAR = 2025
+GROUP BY LIQUOR_CATEGORY
+ORDER BY SALE_DOLLARS DESC
+"""
+
+df = session.sql(query).to_pandas()
+
+if df.empty:
+    st.info("No data found for 2025. Load data, then refresh.")
+else:
+    st.bar_chart(df, x="LIQUOR_CATEGORY", y="SALE_DOLLARS")
+    st.dataframe(df, use_container_width=True, hide_index=True)

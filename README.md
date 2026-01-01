@@ -9,7 +9,7 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 3) `01_env/network_access.sql` – network rule + external access integration for the Socrata API.  
 4) `03_procs/` – create stored procedures (`SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
 5) `04_tasks/task_weekly_load.sql` – create/enable the weekly Task that calls `SP_LOAD_IOWA_LATEST`.  
-6) (Optional) `06_streamlit/streamlit_setup.sql` – compute pool/warehouse/app DB for Streamlit.  
+6) (Optional) `06_streamlit/streamlit_setup.sql` – compute pool/warehouse/app DB for Streamlit; deploy app from `06_streamlit/app.py` via Snowsight “Add App”.  
 7) (Optional) `05_tests/test_stage_load.sql` and `05_tests/test_weekly_task.sql` – manual checks.  
 8) Views/analysis: `02_views/views.sql`; ad hoc SQL lives in `10_adhoc_analysis/`.
 
@@ -37,7 +37,7 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 - `03_procs/` — stored procedures
 - `04_tasks/` — tasks
 - `05_tests/` — ad hoc test scripts
-- `06_streamlit/` — Streamlit app setup
+- `06_streamlit/` — Streamlit app setup and `app.py` entrypoint
 - `10_adhoc_analysis/` — analysis SQL
 - `01_env/start_from_scratch.sql` — teardown/reseed helper
 
@@ -45,3 +45,8 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 - Views now live in `02_views/` (was `02_objects/`).
 - File format script is `01_env/file_format_iowa_json.sql` (dropped numeric prefix).
 - Reset script sits in `01_env/start_from_scratch.sql` (no top-level copy).
+
+### Streamlit app
+- Entry file: `06_streamlit/app.py` (uses active Snowflake session; queries `EVO_DEMO.IOWA_LIQUOR_SALES.IOWA_LIQUOR_SALES`).
+- Deployment: run `06_streamlit/streamlit_setup.sql`, then in Snowsight -> Projects -> Streamlit -> “Add App” from repo path pointing to `06_streamlit/app.py` and use `IOWA_STREAMLIT_WH` or `IOWA_WH`.
+- Current view: bar chart of 2025 sale dollars by liquor category.
