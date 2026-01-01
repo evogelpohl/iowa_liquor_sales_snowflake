@@ -18,6 +18,7 @@ SCHEMA = "IOWA_LIQUOR_SALES"
 DEDUP_KEY = "INVOICE_AND_ITEM_NUMBER"
 TARGET = f"{DB}.{SCHEMA}.IOWA_LIQUOR_SALES"
 RAW_TABLE = f"{DB}.{SCHEMA}.RAW_IOWA"
+RAW_STREAM = f"{DB}.{SCHEMA}.RAW_IOWA_STREAM"
 STAGE_BASE = f"@{DB}.{SCHEMA}.RAW_STAGE/iowa"
 DATASET_START_YEAR = 2012
 
@@ -235,18 +236,16 @@ def run(session: Session, years=None, months=None) -> str:
         FILE_FORMAT=(FORMAT_NAME={DB}.{SCHEMA}.IOWA_JSON_FORMAT)
         PATTERN='{pattern}'
         ON_ERROR='CONTINUE'
-        FORCE=TRUE
+        FORCE=FALSE
     """
     copy_result = session.sql(copy_sql).collect()
 
-    raw_df = session.table(RAW_TABLE)
-
-    raw_count = raw_df.count()
-    if raw_count == 0:
-        return f"No rows loaded from stage; pattern='{pattern}'; copy_result={copy_result}; raw_count={raw_count}"
-
-    prepared = transform_variant_df(raw_df)
+    stream_df = session.table(RAW_STREAM)
+    prepared = transform_variant_df(stream_df).cache_result()
     prepared_count = prepared.count()
+    if prepared_count == 0:
+        return f"No new rows in stream after copy; pattern='{pattern}'; copy_result={copy_result}; prepared_count={prepared_count}"
+
     merge_target(session, prepared)
-    return f"Loaded and merged rows from stage pattern '{pattern}' through {last_full}; raw_count={raw_count}; prepared_count={prepared_count}; copy_result={copy_result}"
+    return f"Loaded and merged rows from stage pattern '{pattern}' through {last_full}; stream_count={prepared_count}; copy_result={copy_result}"
 $$;

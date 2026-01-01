@@ -7,8 +7,9 @@
 ## Build, Test, and Development Commands
 - Use Snow CLI: `snow sql -f <file.sql> -c <profile>`. Shell globs don’t bind to `-f`; run multiple files with multiple `-f` flags or a loop.
 - Create/refresh core objects: `snow sql -f 01_env/warehouse_schema.sql`.
-- Enable network access for the Socrata API: `snow sql -f 01_env/network_access.sql`.
 - Canonical file format: `snow sql -f 01_env/02_file_format_iowa_json.sql`.
+- Enable network access for the Socrata API: `snow sql -f 01_env/network_access.sql`.
+- Streams: `RAW_IOWA_STREAM` is created in `01_env/warehouse_schema.sql` on `RAW_IOWA` (append-only).
 - Deploy logic: `snow sql -f 03_procs/sp_fetch_to_stage.sql`, `sp_load_from_stage.sql`, `sp_load_iowa.sql`, `sp_load_iowa_latest.sql`; then `snow sql -f 04_tasks/task_weekly_load.sql`.
 - Optional app setup: `snow sql -f 06_streamlit/streamlit_setup.sql`.
 - Reset environment: `snow sql -f start_from_scratch.sql` (then rerun env/procs/tasks).
@@ -27,7 +28,7 @@
 
 ## Stored Procedure Pattern (stage-first)
 - Fetch to stage: `CALL IOWA_LIQUOR_SALES.SP_FETCH_IOWA_TO_STAGE(years ARRAY, months ARRAY)`; months use `'YYYY-MM'`. Null args default to the last full month/year.
-- Load from stage: `CALL IOWA_LIQUOR_SALES.SP_LOAD_IOWA_FROM_STAGE(years ARRAY, months ARRAY)`; dedups by `INVOICE_AND_ITEM_NUMBER` then MERGEs into `IOWA_LIQUOR_SALES`.
+- Load from stage: `CALL IOWA_LIQUOR_SALES.SP_LOAD_IOWA_FROM_STAGE(years ARRAY, months ARRAY)`; COPY uses `FORCE=FALSE`, then `RAW_IOWA_STREAM` (append-only) feeds the transform and MERGE into `IOWA_LIQUOR_SALES` (no full-table scan).
 - Incremental latest: `CALL IOWA_LIQUOR_SALES.SP_LOAD_IOWA_LATEST();` (task `WEEKLY_IOWA_LOAD` invokes this).
 - Legacy direct path: `SP_LOAD_IOWA(years ARRAY)` fetches API→table without using stage.
 

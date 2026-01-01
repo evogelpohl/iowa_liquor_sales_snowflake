@@ -4,9 +4,9 @@ This repo is ordered so you can build the pipeline from scratch and rerun pieces
 
 ### Execution Order
 Use Snow CLI (`snow sql -f ...`) with your profile.  
-1) `01_env/warehouse_schema.sql` – create/ensure DB, schema, warehouse, stage, file format, raw + silver tables.  
-2) `01_env/network_access.sql` – network rule + external access integration for the Socrata API.  
-3) `01_env/02_file_format_iowa_json.sql` – canonical JSON file format in the project schema.  
+1) `01_env/warehouse_schema.sql` – create/ensure DB, schema, warehouse, stage, raw + silver tables, and stream on RAW_IOWA.  
+2) `01_env/02_file_format_iowa_json.sql` – canonical JSON file format in the project schema.  
+3) `01_env/network_access.sql` – network rule + external access integration for the Socrata API.  
 4) `03_procs/` – create all stored procedures (`SP_LOAD_IOWA`, `SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
 5) `04_tasks/task_weekly_load.sql` – create/enable the weekly Task that calls `SP_LOAD_IOWA_LATEST`.  
 6) (Optional) `06_streamlit/streamlit_setup.sql` – compute pool/warehouse/app DB for Streamlit.  
@@ -15,7 +15,7 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 
 ### Stored procedure pattern (stage-first)
 - `SP_FETCH_IOWA_TO_STAGE(years ARRAY, months ARRAY)`: pulls from API to `RAW_STAGE` (JSONL). Months use `'YYYY-MM'`; if both args null, defaults to last full year/month.  
-- `SP_LOAD_IOWA_FROM_STAGE(years ARRAY, months ARRAY)`: COPYs matching stage files into `RAW_IOWA`, transforms/dedups, MERGEs into `IOWA_LIQUOR_SALES`.  
+- `SP_LOAD_IOWA_FROM_STAGE(years ARRAY, months ARRAY)`: COPYs matching stage files into `RAW_IOWA` with `FORCE=FALSE`, then reads the `RAW_IOWA_STREAM` (append-only) to transform/dedup and MERGE only new rows into `IOWA_LIQUOR_SALES` (fast/no full scan).  
 - `SP_LOAD_IOWA_LATEST()`: finds the next missing full month after `MAX(SALE_DATE)`, fetches that month to stage, then loads from stage.
 - Legacy direct path: `SP_LOAD_IOWA(years ARRAY)` fetches API → table directly (bypasses stage).
 
@@ -26,7 +26,7 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 - Direct legacy: `CALL IOWA_LIQUOR_SALES.SP_LOAD_IOWA(NULL);` (incremental) or pass years to backfill.
 
 ### Reset
-- `start_from_scratch.sql` drops/recreates tasks, procs, views, and drops tables while preserving stage files.
+- `start_from_scratch.sql` drops/recreates tasks, procs, views, stream, and drops tables while preserving stage files. Re-run env + proc + task files after reset.
 
 ### Validate
 - Row counts: `SELECT COUNT(*) FROM RAW_IOWA;` and `...FROM IOWA_LIQUOR_SALES;`
