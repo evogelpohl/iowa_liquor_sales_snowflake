@@ -5,13 +5,13 @@ This repo is ordered so you can build the pipeline from scratch and rerun pieces
 ### Execution Order
 Use Snow CLI (`snow sql -f ...`) with your profile.  
 1) `01_env/warehouse_schema.sql` – create/ensure DB, schema, warehouse, stage, raw + silver tables, and stream on RAW_IOWA.  
-2) `01_env/02_file_format_iowa_json.sql` – canonical JSON file format in the project schema.  
+2) `01_env/file_format_iowa_json.sql` – canonical JSON file format in the project schema.  
 3) `01_env/network_access.sql` – network rule + external access integration for the Socrata API.  
 4) `03_procs/` – create all stored procedures (`SP_LOAD_IOWA`, `SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
 5) `04_tasks/task_weekly_load.sql` – create/enable the weekly Task that calls `SP_LOAD_IOWA_LATEST`.  
 6) (Optional) `06_streamlit/streamlit_setup.sql` – compute pool/warehouse/app DB for Streamlit.  
 7) (Optional) `05_tests/test_stage_load.sql` and `05_tests/test_weekly_task.sql` – manual checks.  
-8) Analysis/views: `02_objects/views.sql`, `02_objects/analysis.sql`.
+8) Views/analysis: `02_views/views.sql`; ad hoc SQL lives in `10_adhoc_analysis/`.
 
 ### Stored procedure pattern (stage-first)
 - `SP_FETCH_IOWA_TO_STAGE(years ARRAY, months ARRAY)`: pulls from API to `RAW_STAGE` (JSONL). Months use `'YYYY-MM'`; if both args null, defaults to last full year/month.  
@@ -26,7 +26,7 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 - Direct legacy: `CALL IOWA_LIQUOR_SALES.SP_LOAD_IOWA(NULL);` (incremental) or pass years to backfill.
 
 ### Reset
-- `start_from_scratch.sql` drops/recreates tasks, procs, views, stream, and drops tables while preserving stage files. Re-run env + proc + task files after reset.
+- `01_env/start_from_scratch.sql` drops/recreates tasks, procs, views, stream, and drops tables while preserving stage files. Re-run env + proc + task files after reset.
 
 ### Validate
 - Row counts: `SELECT COUNT(*) FROM RAW_IOWA;` and `...FROM IOWA_LIQUOR_SALES;`
@@ -35,9 +35,15 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 
 ### Layout
 - `01_env/` — environment (DB/schema/warehouse/stage/file formats)
-- `02_objects/` — tables, views, analysis
+- `02_views/` — views
 - `03_procs/` — stored procedures
 - `04_tasks/` — tasks
 - `05_tests/` — ad hoc test scripts
 - `06_streamlit/` — Streamlit app setup
-- `start_from_scratch.sql` — teardown/reseed helper
+- `10_adhoc_analysis/` — analysis SQL
+- `01_env/start_from_scratch.sql` — teardown/reseed helper
+
+### Notes on recent renames
+- Views now live in `02_views/` (was `02_objects/`).
+- File format script is `01_env/file_format_iowa_json.sql` (dropped numeric prefix).
+- Reset script sits in `01_env/start_from_scratch.sql` (no top-level copy).
