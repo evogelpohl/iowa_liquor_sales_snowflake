@@ -13,5 +13,5 @@
 # OS/editor noise
 .DS_Store
 
-# My personal stuff
+# My personal commands with my secrets
 my_*.sql
