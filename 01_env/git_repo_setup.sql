@@ -1,12 +1,12 @@
 -- GitHub-backed git repository setup for Snowsight/CLI workflows.
--- Update the placeholders before running (GitHub username + PAT). Do not commit real secrets.
+-- Update the placeholders before running (GitHub username + PAT).
 USE ROLE ACCOUNTADMIN;
 USE DATABASE EVO_DEMO;
 USE SCHEMA IOWA_LIQUOR_SALES;
 
 -- 1) Create/update the secret (replace values before execution).
--- Example: username = 'evogelpohl', password = '<PAT_FROM_GITHUB>'
-CREATE OR REPLACE SECRET GITHUB_PAT_EVOGELPOHL
+-- Example: username = 'your_gh_username', password = '<PAT_FROM_GITHUB>'
+CREATE OR REPLACE SECRET GITHUB_PAT_YOURNAME
   TYPE = PASSWORD
   USERNAME = '<<GITHUB_USERNAME>>'
   PASSWORD = '<<GITHUB_PAT>>';
@@ -19,7 +19,7 @@ CREATE OR REPLACE API INTEGRATION GITHUB_PUBLIC_GIT
     'https://github.com/evogelpohl/iowa_liquor_sales_snowflake',
     'https://github.com/evogelpohl/iowa_liquor_sales_snowflake/'
   )
-  ALLOWED_AUTHENTICATION_SECRETS = (GITHUB_PAT_EVOGELPOHL)
+  ALLOWED_AUTHENTICATION_SECRETS = (GITHUB_PAT_YOURNAME)
   ENABLED = TRUE;
 
 -- 3) Create or refresh the git repository object.
@@ -29,7 +29,7 @@ CREATE OR REPLACE GIT REPOSITORY IOWA_LIQUOR_SALES_REPO
 
 -- 4) Attach credentials and fetch the latest commit.
 ALTER GIT REPOSITORY IOWA_LIQUOR_SALES_REPO
-  SET GIT_CREDENTIALS = GITHUB_PAT_EVOGELPOHL;
+  SET GIT_CREDENTIALS = GITHUB_PAT_YOURNAME;
 
 ALTER GIT REPOSITORY IOWA_LIQUOR_SALES_REPO
   FETCH;
