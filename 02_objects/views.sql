@@ -1,4 +1,4 @@
--- Store location view with corrected coordinates for known outliers
+-- Store location view with corrected coordinates for known mistakes in the origal dataset
 USE DATABASE EVO_DEMO;
 USE SCHEMA IOWA_LIQUOR_SALES;
 USE WAREHOUSE IOWA_WH;
