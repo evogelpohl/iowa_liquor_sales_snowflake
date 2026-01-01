@@ -18,7 +18,6 @@ DROP STREAM IF EXISTS RAW_IOWA_STREAM;
 DROP PROCEDURE IF EXISTS SP_LOAD_IOWA_LATEST();
 DROP PROCEDURE IF EXISTS SP_LOAD_IOWA_FROM_STAGE(ARRAY, ARRAY);
 DROP PROCEDURE IF EXISTS SP_FETCH_IOWA_TO_STAGE(ARRAY, ARRAY);
-DROP PROCEDURE IF EXISTS SP_LOAD_IOWA(ARRAY);
 
 -- Drop view
 DROP VIEW IF EXISTS dim_store_location_v;
@@ -31,4 +30,4 @@ DROP TABLE IF EXISTS IOWA_LIQUOR_SALES;
 -- 01_env/*.sql (env)
 -- 03_procs/*.sql (procs)
 -- 04_tasks/task_weekly_load.sql (task)
--- 02_objects/views.sql (view)
+-- 02_views/views.sql (view)

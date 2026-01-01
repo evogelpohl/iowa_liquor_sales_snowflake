@@ -7,7 +7,7 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 1) `01_env/warehouse_schema.sql` – create/ensure DB, schema, warehouse, stage, raw + silver tables, and stream on RAW_IOWA.  
 2) `01_env/file_format_iowa_json.sql` – canonical JSON file format in the project schema.  
 3) `01_env/network_access.sql` – network rule + external access integration for the Socrata API.  
-4) `03_procs/` – create all stored procedures (`SP_LOAD_IOWA`, `SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
+4) `03_procs/` – create stored procedures (`SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
 5) `04_tasks/task_weekly_load.sql` – create/enable the weekly Task that calls `SP_LOAD_IOWA_LATEST`.  
 6) (Optional) `06_streamlit/streamlit_setup.sql` – compute pool/warehouse/app DB for Streamlit.  
 7) (Optional) `05_tests/test_stage_load.sql` and `05_tests/test_weekly_task.sql` – manual checks.  
@@ -17,13 +17,11 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 - `SP_FETCH_IOWA_TO_STAGE(years ARRAY, months ARRAY)`: pulls from API to `RAW_STAGE` (JSONL). Months use `'YYYY-MM'`; if both args null, defaults to last full year/month.  
 - `SP_LOAD_IOWA_FROM_STAGE(years ARRAY, months ARRAY)`: COPYs matching stage files into `RAW_IOWA` with `FORCE=FALSE`, then reads the `RAW_IOWA_STREAM` (append-only) to transform/dedup and MERGE only new rows into `IOWA_LIQUOR_SALES` (fast/no full scan).  
 - `SP_LOAD_IOWA_LATEST()`: finds the next missing full month after `MAX(SALE_DATE)`, fetches that month to stage, then loads from stage.
-- Legacy direct path: `SP_LOAD_IOWA(years ARRAY)` fetches API → table directly (bypasses stage).
 
 ### Backfill / Incremental examples
 - Stage backfill by years: `CALL IOWA_LIQUOR_SALES.SP_FETCH_IOWA_TO_STAGE(ARRAY_CONSTRUCT(2022,2023), NULL);` then `CALL IOWA_LIQUOR_SALES.SP_LOAD_IOWA_FROM_STAGE(ARRAY_CONSTRUCT(2022,2023), NULL);`
 - Stage targeted months: `CALL ...SP_FETCH_IOWA_TO_STAGE(NULL, ARRAY_CONSTRUCT('2024-11','2024-12'));` then `CALL ...SP_LOAD_IOWA_FROM_STAGE(NULL, ARRAY_CONSTRUCT('2024-11','2024-12'));`
 - Incremental: `CALL IOWA_LIQUOR_SALES.SP_LOAD_IOWA_LATEST();` (weekly task calls this).  
-- Direct legacy: `CALL IOWA_LIQUOR_SALES.SP_LOAD_IOWA(NULL);` (incremental) or pass years to backfill.
 
 ### Reset
 - `01_env/start_from_scratch.sql` drops/recreates tasks, procs, views, stream, and drops tables while preserving stage files. Re-run env + proc + task files after reset.
