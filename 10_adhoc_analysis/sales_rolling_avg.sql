@@ -1,3 +1,5 @@
+-- N-day moving average and trend line (defaults to 90-day) for sale_dollars
+-- Adjust visible_start/visible_end/window_days as needed.
 USE WAREHOUSE IOWA_WH;
 USE DATABASE EVO_DEMO;
 USE SCHEMA IOWA_LIQUOR_SALES;
