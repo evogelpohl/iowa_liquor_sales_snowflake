@@ -19,6 +19,7 @@ ORDER BY SALE_DOLLARS DESC
 """
 
 df = session.sql(query).to_pandas()
+df = df.sort_values(by="SALE_DOLLARS", ascending=False)
 
 if df.empty:
     st.info("No data found for 2025. Load data, then refresh.")
