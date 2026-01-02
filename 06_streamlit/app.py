@@ -15,11 +15,10 @@ SELECT
 FROM EVO_DEMO.IOWA_LIQUOR_SALES.IOWA_LIQUOR_SALES
 WHERE SALE_YEAR = 2025
 GROUP BY LIQUOR_CATEGORY
-ORDER BY SALE_DOLLARS ASC
 """
 
 df = session.sql(query).to_pandas()
-df = df.sort_values(by="SALE_DOLLARS", ascending=True)
+df = df.sort_values(by="LIQUOR_CATEGORY", ascending=True)
 
 if df.empty:
     st.info("No data found for 2025. Load data, then refresh.")
