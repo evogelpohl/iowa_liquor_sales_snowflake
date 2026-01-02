@@ -9,7 +9,7 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 3) `01_env/network_access.sql` – network rule + external access integration for the Socrata API.  
 4) `03_procs/` – create stored procedures (`SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
 5) `04_tasks/task_weekly_load.sql` – create/enable the weekly Task that calls `SP_LOAD_IOWA_LATEST`.  
-6) (Optional) `06_streamlit/streamlit_setup.sql` – compute pool/warehouse/app DB for Streamlit; deploy app from `06_streamlit/app.py` via Snowsight “Add App”.  
+6) (Optional) `06_streamlit/streamlit_setup.sql` – compute pool/warehouse/app DB for Streamlit; deploy app from `06_streamlit/app.py` via Snowsight “Add App” or with CLI helper `06_streamlit/deploy_SLit-app_via_snow-cli.sql`.  
 7) (Optional) `05_tests/test_stage_load.sql` and `05_tests/test_weekly_task.sql` – manual checks.  
 8) Views/analysis: `02_views/views.sql`; ad hoc SQL lives in `10_adhoc_analysis/`.
 
@@ -48,5 +48,7 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 
 ### Streamlit app
 - Entry file: `06_streamlit/app.py` (uses active Snowflake session; queries `EVO_DEMO.IOWA_LIQUOR_SALES.IOWA_LIQUOR_SALES`).
-- Deployment: run `06_streamlit/streamlit_setup.sql`, then in Snowsight -> Projects -> Streamlit -> “Add App” from repo path pointing to `06_streamlit/app.py` and use `IOWA_STREAMLIT_WH` or `IOWA_WH`.
+- Deployment options:
+  - Snowsight: run `06_streamlit/streamlit_setup.sql`, then Projects -> Streamlit -> “Add App” pointing to `06_streamlit/app.py` and use `IOWA_STREAMLIT_WH` (or `IOWA_WH`).
+  - Snow CLI: `snow stage copy 06_streamlit/app.py @IOWA_STREAMLIT.PUBLIC.APP_STAGE --overwrite` then `snow sql -f 06_streamlit/deploy_SLit-app_via_snow-cli.sql`; grab URL with `snow streamlit get-url IOWA_STREAMLIT.PUBLIC.IOWA_LIQUOR_APP --open`. (Deploy script uses fully qualified stage `@IOWA_STREAMLIT.PUBLIC.APP_STAGE`.)
 - Current view: bar chart of 2025 sale dollars by liquor category.
