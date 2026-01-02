@@ -5,7 +5,7 @@ st.set_page_config(page_title="Iowa Liquor Sales", layout="wide")
 
 session = get_active_session()
 
-st.title("Iowa Liquor Sales Dashboard")
+st.title("Iowa Liquor Sales Dashboard V2")
 st.caption("Data from EVO_DEMO.IOWA_LIQUOR_SALES.IOWA_LIQUOR_SALES (SALE_YEAR = 2025)")
 
 query = """
