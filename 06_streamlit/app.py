@@ -24,4 +24,3 @@ if df.empty:
     st.info("No data found for 2025. Load data, then refresh.")
 else:
     st.bar_chart(df, x="LIQUOR_CATEGORY", y="SALE_DOLLARS")
-    st.dataframe(df, use_container_width=True, hide_index=True)
