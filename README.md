@@ -52,3 +52,4 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
   - Snowsight: run `06_streamlit/streamlit_setup.sql`, then Projects -> Streamlit -> “Add App” pointing to `06_streamlit/app.py` and use `IOWA_STREAMLIT_WH` (or `IOWA_WH`).
   - Snow CLI: `snow stage copy 06_streamlit/app.py @IOWA_STREAMLIT.PUBLIC.APP_STAGE --overwrite` then `snow sql -f 06_streamlit/deploy_SLit-app_via_snow-cli.sql`; grab URL with `snow streamlit get-url IOWA_STREAMLIT.PUBLIC.IOWA_LIQUOR_APP --open`. (Deploy script uses fully qualified stage `@IOWA_STREAMLIT.PUBLIC.APP_STAGE`.)
 - Current view: bar chart of 2025 sale dollars by liquor category.
+- Grants: `06_streamlit/streamlit_setup.sql` now grants USAGE on `EVO_DEMO`/`IOWA_LIQUOR_SALES` and SELECT on `IOWA_LIQUOR_SALES.IOWA_LIQUOR_SALES` to `PUBLIC`; adjust to a tighter role if desired.
