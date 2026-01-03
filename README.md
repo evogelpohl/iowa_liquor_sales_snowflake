@@ -43,3 +43,4 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 - Views now live in `02_views/` (was `02_objects/`).
 - File format script is `01_env/file_format_iowa_json.sql` (dropped numeric prefix).
 - Reset script sits in `01_env/start_from_scratch.sql` (no top-level copy).
+
