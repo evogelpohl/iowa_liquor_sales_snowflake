@@ -1,4 +1,4 @@
--- Dynamic N-day moving average (defaults to 90) + linear trend line over the moving average
+-- 90-day rolling average with trend line based on the smoothed average (regression on moving_avg)
 USE WAREHOUSE IOWA_WH;
 USE DATABASE EVO_DEMO;
 USE SCHEMA IOWA_LIQUOR_SALES;

@@ -1,14 +1,13 @@
--- N-day moving average and trend line (defaults to 90-day) for sale_dollars
--- Adjust visible_start/visible_end/window_days as needed.
+-- 90-day rolling average with trend line based on actual daily sales (linear regression on daily sums)
 USE WAREHOUSE IOWA_WH;
 USE DATABASE EVO_DEMO;
 USE SCHEMA IOWA_LIQUOR_SALES;
 
 WITH params AS (
     SELECT
-        DATE '2022-01-01' AS visible_start,
+        DATE '2023-01-01' AS visible_start,
         DATE '9999-12-31' AS visible_end,
-        90 AS window_days 
+        90 AS window_days
 ),
 -- limit scan to what's needed for the window before visible_start
 source AS (
@@ -31,6 +30,7 @@ ma AS (
 xprep AS (
     SELECT
         sale_date,
+        sale_dollars,
         moving_avg,
         DATEDIFF(day, MIN(sale_date) OVER (), sale_date) AS x
     FROM ma
@@ -39,8 +39,8 @@ xprep AS (
 ),
 reg AS (
     SELECT
-        REGR_SLOPE(moving_avg, x)     AS slope,
-        REGR_INTERCEPT(moving_avg, x) AS intercept
+        REGR_SLOPE(sale_dollars, x)     AS slope,
+        REGR_INTERCEPT(sale_dollars, x) AS intercept
     FROM xprep
 )
 SELECT
