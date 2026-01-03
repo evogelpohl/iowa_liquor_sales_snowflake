@@ -7,6 +7,7 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 1) `01_env/warehouse_schema.sql` – create/ensure DB, schema, warehouse, stage, raw + silver tables, and stream on RAW_IOWA.  
 2) `01_env/file_format_iowa_json.sql` – canonical JSON file format in the project schema.  
 3) `01_env/network_access.sql` – network rule + external access integration for the Socrata API.  
+4) `01_env/date_dimension_load.sql` – create/load DATE_DIM from staged CSV (`@RAW_STAGE/date_dim/datedimension.csv`).  
 4) `03_procs/` – create stored procedures (`SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
 5) `04_tasks/task_weekly_load.sql` – create/enable the weekly Task that calls `SP_LOAD_IOWA_LATEST`.  
 6) (Optional) `05_tests/test_stage_load.sql` and `05_tests/test_weekly_task.sql` – manual checks.  
@@ -43,4 +44,3 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 - Views now live in `02_views/` (was `02_objects/`).
 - File format script is `01_env/file_format_iowa_json.sql` (dropped numeric prefix).
 - Reset script sits in `01_env/start_from_scratch.sql` (no top-level copy).
-

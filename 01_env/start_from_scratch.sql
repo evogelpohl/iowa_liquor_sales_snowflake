@@ -21,6 +21,10 @@ DROP PROCEDURE IF EXISTS SP_FETCH_IOWA_TO_STAGE(ARRAY, ARRAY);
 
 -- Drop view
 DROP VIEW IF EXISTS dim_store_location_v;
+DROP VIEW IF EXISTS date_dim_v;
+
+-- Drop date dimension
+DROP TABLE IF EXISTS DATE_DIM;
 
 -- Drop tables (keep stage files intact)
 DROP TABLE IF EXISTS RAW_IOWA;
