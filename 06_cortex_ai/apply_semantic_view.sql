@@ -319,7 +319,11 @@ tables:
           - '1092100'
           - '1031200'
       - name: CATEGORY_NAME
-        description: The classification of alcoholic beverage types based on spirit variety and origin.
+        synonyms:
+          - Category Name
+          - Iowa Category
+          - State Category
+        description: Iowa-provided mid-level category name for the product.
         expr: CATEGORY_NAME
         data_type: VARCHAR(16777216)
         sample_values:
@@ -334,7 +338,11 @@ tables:
           - INV-82354200019
           - INV-82354000050
           - INV-68903900049
-      - name: ITEM_DESCRIPTION
+      - name: ITEM
+        synonyms:
+          - Item Description
+          - Product
+          - Product Name
         description: The brand name and description of the alcoholic beverage product.
         expr: ITEM_DESCRIPTION
         data_type: VARCHAR(16777216)
@@ -350,8 +358,12 @@ tables:
           - '37663'
           - '36969'
           - '26826'
-      - name: LIQUOR_CATEGORY
-        description: The general category or classification of alcoholic beverage.
+      - name: LIQUOR_FAMILY
+        synonyms:
+          - Liquor Family
+          - Liquor Category
+          - Normalized Category
+        description: Normalized high-level liquor family rollup derived from category mappings.
         expr: LIQUOR_CATEGORY
         data_type: VARCHAR(16777216)
         sample_values:
@@ -475,16 +487,30 @@ tables:
           - '1.5'
           - '2'
     metrics:
-      - name: TOTAL_SALES_DOLLARS
+      - name: TOTAL_SALES
+        synonyms:
+          - Total Sales
+          - Sales
+          - Revenue
         description: Total sales dollars across all transactions.
         expr: SUM(SALE_DOLLARS)
       - name: TOTAL_BOTTLES_SOLD
+        synonyms:
+          - Total Bottles Sold
+          - Bottles Sold
+          - Total Quantity
         description: Total number of bottles sold.
         expr: SUM(BOTTLES_SOLD)
       - name: TOTAL_VOLUME_LITERS
+        synonyms:
+          - Total Volume Liters
+          - Volume Sold Liters
         description: Total volume sold in liters.
         expr: SUM(VOLUME_SOLD_LITERS)
       - name: TOTAL_VOLUME_GALLONS
+        synonyms:
+          - Total Volume Gallons
+          - Volume Sold Gallons
         description: Total volume sold in gallons.
         expr: SUM(VOLUME_SOLD_GALLONS)
       - name: AVG_PRICE_PER_BOTTLE
@@ -518,6 +544,85 @@ relationships:
     relationship_type: many_to_one
     join_type: inner
 
+# Snowflake verified query fields allowed: name, question, sql, verifiedAt, verifiedBy, useAsOnboardingQuestion, semanticModelName
+verified_queries:
+  - name: TTM_SALES
+    question: What is our trailing twelve month (TTM) sales?
+    useAsOnboardingQuestion: false
+    sql: |
+      WITH max_month AS (
+          SELECT DATE_TRUNC('MONTH', MAX(SALE_DATE)) AS max_sale_month
+          FROM IOWA_LIQUOR_SALES
+      )
+      SELECT TO_VARCHAR(SUM(SALE_DOLLARS), '$999,999,999,999') AS TTM_SALES
+      FROM IOWA_LIQUOR_SALES
+      CROSS JOIN max_month
+      WHERE SALE_DATE >= DATEADD(MONTH, -11, max_month.max_sale_month)
+        AND SALE_DATE <  DATEADD(MONTH,  1, max_month.max_sale_month)
+  - name: TOP_TTM_ITEMS
+    question: What are the top N best selling items for the past TTM?
+    useAsOnboardingQuestion: false
+    sql: |
+      WITH max_month AS (
+        SELECT DATE_TRUNC('MONTH', MAX(SALE_DATE)) AS max_sale_month
+        FROM IOWA_LIQUOR_SALES
+      ),
+      ttm_sales AS (
+        SELECT
+            INITCAP(ITEM) AS item,
+            SUM(SALE_DOLLARS)        AS ttm_sales
+        FROM IOWA_LIQUOR_SALES
+        CROSS JOIN max_month
+        WHERE SALE_DATE >= DATEADD(MONTH, -11, max_month.max_sale_month)
+          AND SALE_DATE <  DATEADD(MONTH,  1, max_month.max_sale_month)
+        GROUP BY 1
+      )
+      SELECT
+          item AS "Item",
+          ROUND(ttm_sales, 0) AS "TTM Sales"
+      FROM ttm_sales
+      ORDER BY "TTM Sales" DESC
+  - name: MONTHLY_SALES_WITH_TTM_AVG
+    question: Show monthly sales with a trailing 12-month average for the last 36 months.
+    useAsOnboardingQuestion: false
+    sql: |
+      WITH params AS (
+        SELECT
+          DATEADD(MONTH, -36, DATE_TRUNC('MONTH', CURRENT_DATE)) AS visible_start,
+          DATE_TRUNC('MONTH', CURRENT_DATE) AS visible_end
+      ),
+      bounds AS (
+        SELECT
+          DATEADD(MONTH, -11, (SELECT visible_start FROM params)) AS scan_start,
+          (SELECT visible_end FROM params) AS scan_end
+      ),
+      monthly AS (
+        SELECT
+            DATE_TRUNC('MONTH', sale_date) AS sale_month,
+            SUM(sale_dollars) AS monthly_sales
+        FROM IOWA_LIQUOR_SALES
+        WHERE sale_date >= (SELECT scan_start FROM bounds)
+          AND sale_date <  DATEADD(MONTH, 1, (SELECT scan_end FROM bounds))
+        GROUP BY 1
+      ),
+      calc AS (
+        SELECT
+            sale_month,
+            monthly_sales,
+            AVG(monthly_sales) OVER (
+              ORDER BY sale_month
+              ROWS BETWEEN 11 PRECEDING AND CURRENT ROW
+            ) AS ttm_avg_sales
+        FROM monthly
+      )
+      SELECT
+          sale_month AS "Sale Month",
+          ROUND(monthly_sales, 0) AS "Monthly Sales",
+          ROUND(ttm_avg_sales, 0) AS "TTM Avg Sales"
+      FROM calc
+      WHERE sale_month BETWEEN (SELECT visible_start FROM params)
+                          AND (SELECT visible_end FROM params)
+      ORDER BY sale_month
 $$, TRUE);
 
 -- Create or replace the semantic view (copies grants from prior version)
@@ -830,7 +935,11 @@ tables:
           - '1092100'
           - '1031200'
       - name: CATEGORY_NAME
-        description: The classification of alcoholic beverage types based on spirit variety and origin.
+        synonyms:
+          - Category Name
+          - Iowa Category
+          - State Category
+        description: Iowa-provided mid-level category name for the product.
         expr: CATEGORY_NAME
         data_type: VARCHAR(16777216)
         sample_values:
@@ -845,7 +954,11 @@ tables:
           - INV-82354200019
           - INV-82354000050
           - INV-68903900049
-      - name: ITEM_DESCRIPTION
+      - name: ITEM
+        synonyms:
+          - Item Description
+          - Product
+          - Product Name
         description: The brand name and description of the alcoholic beverage product.
         expr: ITEM_DESCRIPTION
         data_type: VARCHAR(16777216)
@@ -861,8 +974,12 @@ tables:
           - '37663'
           - '36969'
           - '26826'
-      - name: LIQUOR_CATEGORY
-        description: The general category or classification of alcoholic beverage.
+      - name: LIQUOR_FAMILY
+        synonyms:
+          - Liquor Family
+          - Liquor Category
+          - Normalized Category
+        description: Normalized high-level liquor family rollup derived from category mappings.
         expr: LIQUOR_CATEGORY
         data_type: VARCHAR(16777216)
         sample_values:
@@ -986,16 +1103,30 @@ tables:
           - '1.5'
           - '2'
     metrics:
-      - name: TOTAL_SALES_DOLLARS
+      - name: TOTAL_SALES
+        synonyms:
+          - Total Sales
+          - Sales
+          - Revenue
         description: Total sales dollars across all transactions.
         expr: SUM(SALE_DOLLARS)
       - name: TOTAL_BOTTLES_SOLD
+        synonyms:
+          - Total Bottles Sold
+          - Bottles Sold
+          - Total Quantity
         description: Total number of bottles sold.
         expr: SUM(BOTTLES_SOLD)
       - name: TOTAL_VOLUME_LITERS
+        synonyms:
+          - Total Volume Liters
+          - Volume Sold Liters
         description: Total volume sold in liters.
         expr: SUM(VOLUME_SOLD_LITERS)
       - name: TOTAL_VOLUME_GALLONS
+        synonyms:
+          - Total Volume Gallons
+          - Volume Sold Gallons
         description: Total volume sold in gallons.
         expr: SUM(VOLUME_SOLD_GALLONS)
       - name: AVG_PRICE_PER_BOTTLE
@@ -1029,6 +1160,85 @@ relationships:
     relationship_type: many_to_one
     join_type: inner
 
+# Snowflake verified query fields allowed: name, question, sql, verifiedAt, verifiedBy, useAsOnboardingQuestion, semanticModelName
+verified_queries:
+  - name: TTM_SALES
+    question: What is our trailing twelve month (TTM) sales?
+    useAsOnboardingQuestion: false
+    sql: |
+      WITH max_month AS (
+          SELECT DATE_TRUNC('MONTH', MAX(SALE_DATE)) AS max_sale_month
+          FROM IOWA_LIQUOR_SALES
+      )
+      SELECT TO_VARCHAR(SUM(SALE_DOLLARS), '$999,999,999,999') AS TTM_SALES
+      FROM IOWA_LIQUOR_SALES
+      CROSS JOIN max_month
+      WHERE SALE_DATE >= DATEADD(MONTH, -11, max_month.max_sale_month)
+        AND SALE_DATE <  DATEADD(MONTH,  1, max_month.max_sale_month)
+  - name: TOP_TTM_ITEMS
+    question: What are the top N best selling items for the past TTM?
+    useAsOnboardingQuestion: false
+    sql: |
+      WITH max_month AS (
+        SELECT DATE_TRUNC('MONTH', MAX(SALE_DATE)) AS max_sale_month
+        FROM IOWA_LIQUOR_SALES
+      ),
+      ttm_sales AS (
+        SELECT
+            INITCAP(ITEM) AS item,
+            SUM(SALE_DOLLARS)        AS ttm_sales
+        FROM IOWA_LIQUOR_SALES
+        CROSS JOIN max_month
+        WHERE SALE_DATE >= DATEADD(MONTH, -11, max_month.max_sale_month)
+          AND SALE_DATE <  DATEADD(MONTH,  1, max_month.max_sale_month)
+        GROUP BY 1
+      )
+      SELECT
+          item AS "Item",
+          ROUND(ttm_sales, 0) AS "TTM Sales"
+      FROM ttm_sales
+      ORDER BY "TTM Sales" DESC
+  - name: MONTHLY_SALES_WITH_TTM_AVG
+    question: Show monthly sales with a trailing 12-month average for the last 36 months.
+    useAsOnboardingQuestion: false
+    sql: |
+      WITH params AS (
+        SELECT
+          DATEADD(MONTH, -36, DATE_TRUNC('MONTH', CURRENT_DATE)) AS visible_start,
+          DATE_TRUNC('MONTH', CURRENT_DATE) AS visible_end
+      ),
+      bounds AS (
+        SELECT
+          DATEADD(MONTH, -11, (SELECT visible_start FROM params)) AS scan_start,
+          (SELECT visible_end FROM params) AS scan_end
+      ),
+      monthly AS (
+        SELECT
+            DATE_TRUNC('MONTH', sale_date) AS sale_month,
+            SUM(sale_dollars) AS monthly_sales
+        FROM IOWA_LIQUOR_SALES
+        WHERE sale_date >= (SELECT scan_start FROM bounds)
+          AND sale_date <  DATEADD(MONTH, 1, (SELECT scan_end FROM bounds))
+        GROUP BY 1
+      ),
+      calc AS (
+        SELECT
+            sale_month,
+            monthly_sales,
+            AVG(monthly_sales) OVER (
+              ORDER BY sale_month
+              ROWS BETWEEN 11 PRECEDING AND CURRENT ROW
+            ) AS ttm_avg_sales
+        FROM monthly
+      )
+      SELECT
+          sale_month AS "Sale Month",
+          ROUND(monthly_sales, 0) AS "Monthly Sales",
+          ROUND(ttm_avg_sales, 0) AS "TTM Avg Sales"
+      FROM calc
+      WHERE sale_month BETWEEN (SELECT visible_start FROM params)
+                          AND (SELECT visible_end FROM params)
+      ORDER BY sale_month
 $$);
 
 -- Demo-friendly grants: allow PUBLIC to see the semantic view (adjust role as needed)
