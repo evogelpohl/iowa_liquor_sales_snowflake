@@ -1,0 +1,19 @@
+USE DATABASE EVO_DEMO;
+USE SCHEMA IOWA_LIQUOR_SALES;
+USE WAREHOUSE IOWA_WH;
+
+WITH max_month AS (
+    SELECT
+        DATE_TRUNC('MONTH', MAX(SALE_DATE)) AS max_sale_month
+    FROM IOWA_LIQUOR_SALES
+)
+
+SELECT
+    TO_VARCHAR(
+        SUM(SALE_DOLLARS),
+        '$999,999,999,999'
+    ) AS TTM_SALES
+FROM IOWA_LIQUOR_SALES
+CROSS JOIN max_month
+WHERE SALE_DATE >= DATEADD(MONTH, -11, max_month.max_sale_month)
+  AND SALE_DATE <  DATEADD(MONTH,  1, max_month.max_sale_month);

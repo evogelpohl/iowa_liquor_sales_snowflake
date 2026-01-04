@@ -7,7 +7,7 @@ WITH params AS (
     SELECT
         DATE '2023-01-01' AS visible_start,
         DATE '9999-12-31' AS visible_end,
-        90 AS window_days
+        28 AS window_days
 ),
 
 -- limit scan to what's needed for the moving window prior to visible_start
@@ -60,8 +60,8 @@ reg AS (
 
 SELECT
     x.sale_date,
-    x.moving_avg,
-    reg.intercept + reg.slope * x.x AS trend_line
+    round(x.moving_avg,0),
+    round(reg.intercept + reg.slope * x.x,0) AS trend_line
 FROM xprep x
 CROSS JOIN reg
 ORDER BY x.sale_date;
