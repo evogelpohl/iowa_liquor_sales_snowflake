@@ -7,11 +7,11 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 1) `01_env/warehouse_schema.sql` – create/ensure DB, schema, warehouse, stage, raw + silver tables, and stream on RAW_IOWA.  
 2) `01_env/file_format_iowa_json.sql` – canonical JSON file format in the project schema.  
 3) `01_env/network_access.sql` – network rule + external access integration for the Socrata API.  
-4) `01_env/date_dimension_load.sql` – create/load DATE_DIM from staged CSV (`@RAW_STAGE/date_dim/datedimension.csv`).  
-4) `03_procs/` – create stored procedures (`SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
-5) `04_tasks/task_weekly_load.sql` – create/enable the weekly Task that calls `SP_LOAD_IOWA_LATEST`.  
-6) (Optional) `05_tests/test_stage_load.sql` and `05_tests/test_weekly_task.sql` – manual checks.  
-7) Views/analysis: `02_views/views.sql`; ad hoc SQL lives in `10_adhoc_analysis/`.
+4) `01_env/date_dimension_load.sql` – create/load DATE_DIM from staged CSV (`@RAW_STAGE/date_dim/datedimension.csv`). Source: https://github.com/wysiwys/datedim_with_holidays (CSV generated externally; Python not included here).  
+5) `03_procs/` – create stored procedures (`SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
+6) `04_tasks/task_weekly_load.sql` – create/enable the weekly Task that calls `SP_LOAD_IOWA_LATEST`.  
+7) (Optional) `05_tests/test_stage_load.sql` and `05_tests/test_weekly_task.sql` – manual checks.  
+8) Views/analysis: `02_views/views.sql`; ad hoc SQL lives in `10_adhoc_analysis/`.
 
 ### Stored procedure pattern (stage-first)
 - `SP_FETCH_IOWA_TO_STAGE(years ARRAY, months ARRAY)`: pulls from API to `RAW_STAGE` (JSONL). Months use `'YYYY-MM'`; if both args null, defaults to last full year/month.  
