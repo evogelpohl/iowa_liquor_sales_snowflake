@@ -8,6 +8,12 @@ WITH ranked AS (
   SELECT
     store_number,
     store_name,
+    address as store_street_address,
+    city as store_city,
+    'IA' as store_state,
+    zip_code as store_zip,
+    county as store_county,
+    county_number as store_county_number,
     store_location,
     ROW_NUMBER() OVER (
       PARTITION BY store_number
@@ -19,6 +25,12 @@ WITH ranked AS (
 SELECT
   store_number,
   store_name,
+  store_street_address,
+  store_city,
+  store_state,
+  store_zip,
+  store_county,
+  store_county_number,
   CASE WHEN store_number IN (10505, 10129, 10663) THEN TRUE ELSE FALSE END AS correctedTF,
   CASE
     WHEN store_number = 10505 THEN OBJECT_CONSTRUCT('type','Point','coordinates', ARRAY_CONSTRUCT(-95.14875::double, 43.18232::double))
@@ -41,3 +53,6 @@ SELECT
 FROM ranked
 WHERE rn = 1
   AND store_location IS NOT NULL;
+
+-- Grant access to the view to public role
+GRANT SELECT ON VIEW dim_store_location_v TO ROLE PUBLIC;
