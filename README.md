@@ -2,7 +2,7 @@
 
 This repo is ordered so you can build the pipeline from scratch and rerun pieces cleanly.
 
-### What this is (and why)
+### The Project
 - End-to-end Snowflake demo for the Iowa State Liquor Sales dataset (public, item-level retail sales from Iowa state liquor stores). Each row is an item on a sales invoice, with store, vendor, product, volumes, costs, and sales dollars. We normalize categories, roll up to liquor families, and include store geospatial points for mapping.
 - Creates the full landing-to-analytics stack: database/schema/warehouse/stage, file formats, ingest procs, weekly task, core views (including geospatial store view), and ad hoc dashboard starter SQL.
 - Adds a Cortex Analyst semantic view plus a Cortex Agent for natural-language SQL and Snowflake Intelligence integration, so you can ask NL questions about revenue, volume, gross margin, categories/families, items, and geography.
