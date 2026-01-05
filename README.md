@@ -37,10 +37,17 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 - `03_procs/` — stored procedures
 - `04_tasks/` — tasks
 - `05_tests/` — ad hoc test scripts
+- `06_cortex_ai/` — Cortex Analyst semantic view YAML + apply script, and Cortex Agent creation script
 - `10_adhoc_analysis/` — analysis SQL
 - `01_env/start_from_scratch.sql` — teardown/reseed helper
+- `iowa_liquor_sales_sample_20_rows.csv` — tiny 20-row sample for quick inspection
 
 ### Notes on recent renames
 - Views now live in `02_views/` (was `02_objects/`).
 - File format script is `01_env/file_format_iowa_json.sql` (dropped numeric prefix).
 - Reset script sits in `01_env/start_from_scratch.sql` (no top-level copy).
+
+### Cortex AI artifacts (06_cortex_ai)
+- `iowa_liquor_sales_semantic_view.yaml` — semantic model for Analyst (renamed dimensions: Iowa category = `CATEGORY_NAME` with synonyms, normalized rollup `LIQUOR_FAMILY`, item label `ITEM` with synonyms).
+- `apply_semantic_view.sql` — verifies then (re)creates the semantic view from the YAML and copies grants.
+- `create_cortex_agent.sql` — builds `AGENT_IOWA_LIQUOR_SALES` with profile, goal, and Cortex Analyst tool bound to `SV_IOWA_LIQUOR_SALES`; uses orchestration model `openai-gpt-5` (adjust as needed). Grants USAGE to PUBLIC by default.
