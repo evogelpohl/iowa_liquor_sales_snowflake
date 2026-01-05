@@ -1,5 +1,5 @@
 -- Create a Cortex Agent that uses the SV_IOWA_LIQUOR_SALES semantic view as a Cortex Analyst tool.
--- Run with: snow sql -f 06_cortex_ai/create_cortex_agent.sql
+-- Run with: snow sql -f 06_cortex_ai/agent_create.sql
 -- Notes:
 --   - Uses CREATE AGENT ... FROM SPECIFICATION syntax (see docs: https://docs.snowflake.com/en/sql-reference/sql/create-agent).
 --   - Requires Cortex Agent feature + SNOWFLAKE.CORTEX_USER (or broader Covered AI role).

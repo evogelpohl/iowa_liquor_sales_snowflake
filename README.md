@@ -8,10 +8,11 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 2) `01_env/file_format_iowa_json.sql` – canonical JSON file format in the project schema.  
 3) `01_env/network_access.sql` – network rule + external access integration for the Socrata API.  
 4) `01_env/date_dimension_load.sql` – create/load DATE_DIM from staged CSV (`@RAW_STAGE/date_dim/datedimension.csv`). Source: https://github.com/wysiwys/datedim_with_holidays (CSV generated externally; Python not included here).  
-5) `03_procs/` – create stored procedures (`SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
-6) `04_tasks/task_weekly_load.sql` – create/enable the weekly Task that calls `SP_LOAD_IOWA_LATEST`.  
-7) (Optional) `05_tests/test_stage_load.sql` and `05_tests/test_weekly_task.sql` – manual checks.  
-8) Views/analysis: `02_views/views.sql`; ad hoc SQL lives in `10_adhoc_analysis/`.
+5) `01_env/views.sql` – create required views (e.g., `dim_store_location_v`).  
+6) `03_procs/` – create stored procedures (`SP_FETCH_IOWA_TO_STAGE`, `SP_LOAD_IOWA_FROM_STAGE`, `SP_LOAD_IOWA_LATEST`).  
+7) `04_tasks/task_weekly_load.sql` – create/enable the weekly Task that calls `SP_LOAD_IOWA_LATEST`.  
+8) (Optional) `05_tests/test_stage_load.sql` and `05_tests/test_weekly_task.sql` – manual checks.  
+9) Ad hoc/dashboard seeds: `10_adhoc_analysis/` (starter SQL for Snowsight dashboards).
 
 ### Stored procedure pattern (stage-first)
 - `SP_FETCH_IOWA_TO_STAGE(years ARRAY, months ARRAY)`: pulls from API to `RAW_STAGE` (JSONL). Months use `'YYYY-MM'`; if both args null, defaults to last full year/month.  
@@ -32,22 +33,21 @@ Use Snow CLI (`snow sql -f ...`) with your profile.
 - Task history: `SELECT * FROM TABLE(INFORMATION_SCHEMA.TASK_HISTORY(...))`.
 
 ### Layout
-- `01_env/` — environment (DB/schema/warehouse/stage/file formats)
-- `02_views/` — views
+- `01_env/` — environment (DB/schema/warehouse/stage/file formats/views)
 - `03_procs/` — stored procedures
 - `04_tasks/` — tasks
 - `05_tests/` — ad hoc test scripts
 - `06_cortex_ai/` — Cortex Analyst semantic view YAML + apply script, and Cortex Agent creation script
-- `10_adhoc_analysis/` — analysis SQL
+- `09_sample_data/` — sample CSV (20 rows)
+- `10_adhoc_analysis/` — starter SQL for Snowsight dashboards
 - `01_env/start_from_scratch.sql` — teardown/reseed helper
-- `iowa_liquor_sales_sample_20_rows.csv` — tiny 20-row sample for quick inspection
 
 ### Notes on recent renames
-- Views now live in `02_views/` (was `02_objects/`).
+- Views now live in `01_env/views.sql` (folder `02_views/` removed).
 - File format script is `01_env/file_format_iowa_json.sql` (dropped numeric prefix).
 - Reset script sits in `01_env/start_from_scratch.sql` (no top-level copy).
 
 ### Cortex AI artifacts (06_cortex_ai)
-- `iowa_liquor_sales_semantic_view.yaml` — semantic model for Analyst (renamed dimensions: Iowa category = `CATEGORY_NAME` with synonyms, normalized rollup `LIQUOR_FAMILY`, item label `ITEM` with synonyms).
-- `apply_semantic_view.sql` — verifies then (re)creates the semantic view from the YAML and copies grants.
-- `create_cortex_agent.sql` — builds `AGENT_IOWA_LIQUOR_SALES` with profile, goal, and Cortex Analyst tool bound to `SV_IOWA_LIQUOR_SALES`; uses orchestration model `openai-gpt-5` (adjust as needed). Grants USAGE to PUBLIC by default.
+- `semantic_view.yaml` — semantic model for Analyst (renamed dimensions: Iowa category = `CATEGORY_NAME` with synonyms, normalized rollup `LIQUOR_FAMILY`, item label `ITEM` with synonyms).
+- `semantic_view_create.sql` — verifies then (re)creates the semantic view from the YAML and copies grants.
+- `agent_create.sql` — builds `AGENT_IOWA_LIQUOR_SALES` with profile, goal, and Cortex Analyst tool bound to `SV_IOWA_LIQUOR_SALES`; uses orchestration model `openai-gpt-5` (adjust as needed). Grants USAGE to PUBLIC by default.

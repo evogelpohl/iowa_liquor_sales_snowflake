@@ -1,5 +1,5 @@
 -- Apply/verify semantic view for SV_IOWA_LIQUOR_SALES
--- Run with: snow sql -f 06_cortex_ai/apply_semantic_view.sql
+-- Run with: snow sql -f 06_cortex_ai/semantic_view_create.sql
 -- Uses verify-only first, then create/replace to copy grants.
 USE DATABASE EVO_DEMO;
 USE SCHEMA IOWA_LIQUOR_SALES;
