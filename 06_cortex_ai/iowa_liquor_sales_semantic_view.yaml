@@ -1,5 +1,10 @@
 name: SV_IOWA_LIQUOR_SALES
 description: This semantic view (sv_) connects the iowa liquor sales fact table to its store and location table along with a traditional CY based date dimension joined by sale_date. The Iowa liquor sales table records sales receipts for all state liquor stores at the item level.
+module_custom_instructions:
+  sql_generation: |
+    - When aggregating over months, years, or categories, round currency measures to 0 decimals.
+    - For row-level or invoice-level outputs, round currency measures to 2 decimals.
+    - Assume monthly sales are complete through the last day of each month.
 tables:
   - name: DATE_DIM
     description: The table contains calendar date reference information with standard date parts and classifications. Each record represents a single date with its various temporal components, holiday designations, and common date-based calculations.

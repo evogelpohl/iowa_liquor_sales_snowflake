@@ -14,7 +14,7 @@ DROP AGENT IF EXISTS AGENT_IOWA_LIQUOR_SALES;
 
 -- Create the agent with Cortex Analyst (text-to-SQL) bound to the semantic view
 CREATE OR REPLACE AGENT AGENT_IOWA_LIQUOR_SALES
-  COMMENT = 'CFO/Revenue analyst for Iowa liquor sales with Analyst tool'
+  COMMENT = 'Financial analyst for Iowa liquor sales performance. Answers questions on revenue, volume, gross margin, trends, and category/item mix using the semantic view.'
   PROFILE = '{"display_name": "Iowa Liquor Sales Analyst", "color": "blue"}'
   FROM SPECIFICATION
 $$
@@ -23,7 +23,7 @@ models:
 
 orchestration:
   budget:
-    seconds: 30
+    seconds: 300
     tokens: 16000
 
 instructions:
